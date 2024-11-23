@@ -8,7 +8,7 @@
     ],
     "action": {
       "default_popup": "popup.html",
-      "default_title": "Element Value Collector"
+      "default_title": "scrape2gether"
     },
     "content_scripts": [{
       "matches": ["<all_urls>"],

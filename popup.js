@@ -49,6 +49,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const selector = childSelectorInput.value.trim();
     const regex = childRegexInput.value.trim();
 
+    if (regex && !isValidRegex(regex)) {
+      alert('Invalid regex pattern');
+      return;
+    }
+
     if (name && selector) {
       currentGroup.childSelectors.push({
         name,

@@ -105,6 +105,15 @@ function highlightElements(groups) {
   });
 }
 
+function isValidRegex(pattern) {
+  try {
+    new RegExp(pattern);
+    return true;
+  } catch(e) {
+    return false;
+  }
+}
+
 // Listen for messages from popup
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   debugLog('Received message:', message);
