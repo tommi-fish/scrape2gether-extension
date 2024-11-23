@@ -2,125 +2,74 @@
 <html>
 <head>
   <style>
-    body {
-      width: 400px;
+    body { width: 400px; padding: 10px; }
+    .input-group { margin-bottom: 10px; }
+    .input-group label { display: block; margin-bottom: 5px; }
+    .input-group input { width: 100%; padding: 5px; }
+    .child-selector { 
+      margin-left: 20px;
+      padding-left: 10px;
+      border-left: 2px solid #ccc;
+    }
+    .selector-group {
+      margin-bottom: 15px;
       padding: 10px;
-      font-family: Arial, sans-serif;
-    }
-    .input-group {
-      margin-bottom: 10px;
-    }
-    .input-group label {
-      display: block;
-      margin-bottom: 3px;
-      font-weight: bold;
-    }
-    .input-group input {
-      width: 100%;
-      padding: 5px;
-      margin-bottom: 5px;
-    }
-    .selector-list {
-      max-height: 200px;
-      overflow-y: auto;
-      margin-top: 15px;
-    }
-    .selector-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: start;
-      padding: 8px;
-      border-bottom: 1px solid #eee;
-      background-color: #f9f9f9;
-      margin-bottom: 5px;
+      border: 1px solid #ddd;
       border-radius: 4px;
     }
-    .selector-info {
-      flex-grow: 1;
-    }
-    .selector-name {
-      font-weight: bold;
-      margin-bottom: 3px;
-    }
-    .selector-value {
-      color: #666;
-      font-size: 0.9em;
-      word-break: break-all;
-    }
-    .button-group {
-      display: flex;
-      gap: 10px;
-      margin: 10px 0;
-    }
-    button {
-      padding: 8px;
-      background-color: #4CAF50;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #45a049;
-    }
-    .delete-btn {
-      color: red;
-      background: none;
-      padding: 5px;
-    }
-    #jsonOutput {
-      display: none;
-      margin-top: 10px;
-      padding: 10px;
-      background-color: #f5f5f5;
-      border-radius: 4px;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-    .view-mode {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 10px;
-    }
+    button { margin: 5px; padding: 5px 10px; }
+    #jsonOutput { white-space: pre-wrap; }
   </style>
 </head>
 <body>
   <div id="inputMode">
     <h3>Element Value Collector</h3>
-    <div class="input-group">
-      <label for="nameInput">Name:</label>
-      <input type="text" id="nameInput" placeholder="Enter name for selector">
-    </div>
-    <div class="input-group">
-      <label for="selectorInput">Selector:</label>
-      <input type="text" id="selectorInput" placeholder="Enter CSS selector">
-    </div>
-    <div class="input-group">
-      <label for="regexInput">Selector:</label>
-      <input type="text" id="regexInput" placeholder="Enter Regex Pattern">
-    </div>
-    <div class="button-group">
-      <button id="addSelector">Add Selector</button>
-      <button id="viewData">View Data</button>
+
+    <div class="selector-group">
+      <div class="input-group">
+        <label>Group Name:</label>
+        <input type="text" id="groupNameInput" placeholder="e.g., Product Item">
+      </div>
+
+      <div class="input-group">
+        <label>Container Selector:</label>
+        <input type="text" id="containerSelectorInput" placeholder="e.g., div.product-card">
+      </div>
+
+      <div id="childSelectors">
+        <h4>Child Selectors</h4>
+        <div class="child-selector">
+          <div class="input-group">
+            <label>Field Name:</label>
+            <input type="text" id="childNameInput" placeholder="e.g., price">
+          </div>
+          <div class="input-group">
+            <label>Selector:</label>
+            <input type="text" id="childSelectorInput" placeholder="e.g., .price-value">
+          </div>
+          <div class="input-group">
+            <label>Regex (optional):</label>
+            <input type="text" id="childRegexInput" placeholder="e.g., \d+(\.\d{2})?">
+          </div>
+          <button id="addChildSelector">Add Child Selector</button>
+        </div>
+      </div>
+
+      <button id="saveGroup">Save Selector Group</button>
     </div>
 
-    <!-- Dropdown for selecting a previously used selector -->
     <div class="input-group">
-      <label for="selectorDropdown">Select Previously Used Selector:</label>
-      <select id="selectorDropdown">
-        <option value="">-- Select a selector --</option>
+      <label>Load Existing Group:</label>
+      <select id="selectorGroupDropdown">
+        <option value="">Select a group</option>
       </select>
     </div>
-    <div class="button-group">
-      <button id="loadSelector">Load Selector</button>
-      <button id="disableSelectors">Disable All Selectors</button>
-    </div>
 
-    <div id="selectorList" class="selector-list"></div>
+    <button id="loadGroup">Load Group</button>
+    <button id="viewData">View Data</button>
   </div>
 
-  <div id="jsonOutput"></div>
-
-  <script src="popup.js"></script>
+  <div id="jsonOutput" style="display: none;"></div>
 </body>
+<script src="popup.js"></script>
 </html>

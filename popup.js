@@ -1,98 +1,165 @@
 document.addEventListener('DOMContentLoaded', function() {
-  const dropdown = document.getElementById('selectorDropdown'); // The dropdown element
-  const nameInput = document.getElementById('nameInput');
-  const selectorInput = document.getElementById('selectorInput');
-  
-  const addButton = document.getElementById('addSelector');
+  // Get DOM elements
+  const groupNameInput = document.getElementById('groupNameInput');
+  const containerSelectorInput = document.getElementById('containerSelectorInput');
+  const childNameInput = document.getElementById('childNameInput');
+  const childSelectorInput = document.getElementById('childSelectorInput');
+  const childRegexInput = document.getElementById('childRegexInput');
+  const addChildButton = document.getElementById('addChildSelector');
+  const saveGroupButton = document.getElementById('saveGroup');
+  const loadGroupButton = document.getElementById('loadGroup');
   const viewDataButton = document.getElementById('viewData');
-  const loadSelectorButton = document.getElementById('loadSelector');
-
-  const selectorList = document.getElementById('selectorList');
+  const groupDropdown = document.getElementById('selectorGroupDropdown');
   const jsonOutput = document.getElementById('jsonOutput');
   const inputMode = document.getElementById('inputMode');
-  const regexInput = document.getElementById('regexInput');
 
-  // Load existing selectors into the dropdown
-  function loadSelectors() {
-    chrome.storage.local.get(['selectorData'], function(result) {
-      const selectorData = result.selectorData || [];
-      console.log(selectorData); // Log to verify the data
-      if (selectorData.length > 0) {
-        populateDropdown(selectorData);
-      }
+  let currentGroup = {
+    name: '',
+    containerSelector: '',
+    childSelectors: [],
+    id: Date.now().toString()
+  };
+
+  function debugLog(message, data) {
+    console.log(`[Popup] ${message}`, data);
+  }
+
+  // Load existing groups into dropdown
+  function loadGroups() {
+    chrome.storage.local.get(['selectorGroups'], function(result) {
+      const groups = result.selectorGroups || [];
+      debugLog('Loaded groups:', groups);
+      
+      // Clear existing options
+      groupDropdown.innerHTML = '<option value="">Select a group</option>';
+
+      // Add options for each group
+      groups.forEach(group => {
+        const option = document.createElement('option');
+        option.textContent = group.name;
+        option.value = group.id;
+        groupDropdown.appendChild(option);
+      });
     });
   }
 
-  function populateDropdown(selectorData) {
-    // Clear existing options
-    dropdown.innerHTML = '';
-
-    // Create default "Select" option
-    const defaultOption = document.createElement('option');
-    defaultOption.textContent = 'Select a selector';
-    defaultOption.value = '';
-    dropdown.appendChild(defaultOption);
-
-    // Add options for each selector
-    selectorData.forEach(selector => {
-      const option = document.createElement('option');
-      option.textContent = selector.name; // The name of the selector
-      option.value = selector.id; // Use the unique ID for the option value
-      dropdown.appendChild(option);
-    });
-  }
-
-  // Call loadSelectors when popup opens
-  loadSelectors();
-
-  // Add new selector
-  addButton.addEventListener('click', function() {
-    const name = nameInput.value.trim();
-    const selector = selectorInput.value.trim();
-    const regex = regexInput.value.trim();
+  // Add child selector to current group
+  addChildButton.addEventListener('click', function() {
+    const name = childNameInput.value.trim();
+    const selector = childSelectorInput.value.trim();
+    const regex = childRegexInput.value.trim();
 
     if (name && selector) {
-      chrome.storage.local.get(['selectorData'], function(result) {
-        const selectorData = result.selectorData || [];
-        const newSelector = {
-          name: name,
-          selector: selector,
-          regex: regex,
-          id: Date.now().toString()
-        };
-
-        selectorData.push(newSelector);
-        chrome.storage.local.set({ selectorData });
-
-        // Update the dropdown
-        populateDropdown(selectorData);
-
-        // Notify content script
-        updateContentScript(selectorData);
-
-        // Clear input fields
-        nameInput.value = '';
-        selectorInput.value = '';
-        regexInput.value = '';
+      currentGroup.childSelectors.push({
+        name,
+        selector,
+        regex,
+        id: Date.now().toString()
       });
+
+      debugLog('Added child selector:', currentGroup.childSelectors);
+
+      // Clear inputs
+      childNameInput.value = '';
+      childSelectorInput.value = '';
+      childRegexInput.value = '';
     }
   });
 
-  function updateContentScript(selectorData) {
-    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-      chrome.tabs.sendMessage(tabs[0].id, {
-        action: "updateSelectors",
-        selectorData: selectorData
+  // Save entire selector group
+  saveGroupButton.addEventListener('click', function() {
+    const groupName = groupNameInput.value.trim();
+    const containerSelector = containerSelectorInput.value.trim();
+
+    if (groupName && containerSelector && currentGroup.childSelectors.length > 0) {
+      chrome.storage.local.get(['selectorGroups'], function(result) {
+        const groups = result.selectorGroups || [];
+        
+        currentGroup.name = groupName;
+        currentGroup.containerSelector = containerSelector;
+
+        groups.push(currentGroup);
+        debugLog('Saving groups:', groups);
+        
+        chrome.storage.local.set({ selectorGroups: groups }, function() {
+          // Update content script
+          updateContentScript(groups);
+
+          // Reset form
+          groupNameInput.value = '';
+          containerSelectorInput.value = '';
+          currentGroup = {
+            name: '',
+            containerSelector: '',
+            childSelectors: [],
+            id: Date.now().toString()
+          };
+
+          // Reload groups in dropdown
+          loadGroups();
+        });
       });
+    } else {
+      alert('Please fill in all required fields and add at least one child selector');
+    }
+  });
+
+  // Load selected group
+  loadGroupButton.addEventListener('click', function() {
+    const selectedGroupId = groupDropdown.value;
+    
+    if (!selectedGroupId) {
+      alert('Please select a group');
+      return;
+    }
+
+    chrome.storage.local.get(['selectorGroups'], function(result) {
+      const groups = result.selectorGroups || [];
+      const selectedGroup = groups.find(g => g.id === selectedGroupId);
+
+      if (selectedGroup) {
+        debugLog('Loading group:', selectedGroup);
+        
+        chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+          if (!tabs[0]?.id) {
+            alert('Cannot access the current tab. Please try again.');
+            return;
+          }
+          
+          chrome.tabs.sendMessage(tabs[0].id, {
+            action: "loadSelectorGroup",
+            selectorGroup: selectedGroup
+          }, function(response) {
+            debugLog('Load group response:', response);
+            if (chrome.runtime.lastError) {
+              console.error('Error:', chrome.runtime.lastError);
+            }
+          });
+        });
+      }
     });
-  }
+  });
 
   // View collected data
-  viewDataButton.addEventListener('click', async function() {
+  viewDataButton.addEventListener('click', function() {
     chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+      if (!tabs[0]?.id) {
+        alert('Cannot access the current tab. Please try again.');
+        return;
+      }
+      
+      debugLog('Requesting data...');
+      
       chrome.tabs.sendMessage(tabs[0].id, {
         action: "getData"
       }, function(response) {
+        debugLog('View data response:', response);
+        
+        if (chrome.runtime.lastError) {
+          console.error('Error:', chrome.runtime.lastError);
+          return;
+        }
+        
         if (response && response.data) {
           jsonOutput.style.display = 'block';
           jsonOutput.textContent = JSON.stringify(response.data, null, 2);
@@ -112,29 +179,28 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 
-  // Load Selector button click handler
-  loadSelectorButton.addEventListener('click', function() {
-    const selectedSelectorId = dropdown.value;
-    
-    if (!selectedSelectorId) {
-      alert('Please select a selector');
-      return;
-    }
-
-    // Retrieve the full selector data from storage
-    chrome.storage.local.get(['selectorData'], function(result) {
-      const selectorData = result.selectorData || [];
-      const selectedSelector = selectorData.find(s => s.id === selectedSelectorId);
-
-      if (selectedSelector) {
-        // Send message to content script to load and highlight the selector
-        chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-          chrome.tabs.sendMessage(tabs[0].id, {
-            action: "loadSelector",
-            selectorData: [selectedSelector]
-          });
-        });
+  function updateContentScript(groups) {
+    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+      if (!tabs[0]?.id) {
+        alert('Cannot access the current tab. Please try again.');
+        return;
       }
+      
+      debugLog('Updating content script with groups:', groups);
+      
+      chrome.tabs.sendMessage(tabs[0].id, {
+        action: "updateSelectorGroups",
+        selectorGroups: groups
+      }, function(response) {
+        debugLog('Update response:', response);
+        if (chrome.runtime.lastError) {
+          console.error('Error:', chrome.runtime.lastError);
+        }
+      });
     });
-  });
+  }
+
+  // Load groups when popup opens
+  loadGroups();
+  debugLog('Popup initialized');
 });
