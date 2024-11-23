@@ -20,8 +20,12 @@ document.addEventListener('DOMContentLoaded', function() {
     id: Date.now().toString()
   };
 
+  const DEBUG_MODE = false;  // Set to true only when debugging
+
   function debugLog(message, data) {
-    console.log(`[Popup] ${message}`, data);
+    if (DEBUG_MODE) {
+      console.log(`[Popup] ${message}`, data);
+    }
   }
 
   // Load existing groups into dropdown

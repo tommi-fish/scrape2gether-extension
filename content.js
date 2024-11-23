@@ -1,10 +1,14 @@
 let highlightedElements = new Set();
 let observers = [];
 let currentGroups = [];
+let debounceTimer;
+const DEBUG_MODE = false;
 
 // Add debug logging
 function debugLog(message, data) {
-  console.log(`[Element Collector] ${message}`, data);
+  if (DEBUG_MODE) {
+    console.log(`[Element Collector] ${message}`, data);
+  }
 }
 
 // Function to collect data from elements with nested structure
@@ -129,22 +133,37 @@ function highlightElements(groups) {
       });
 
       // Set up mutation observer
-      const observer = new MutationObserver((mutations) => {
-        requestAnimationFrame(() => {
-          highlightElements(currentGroups);
-        });
-      });
-
-      observer.observe(document.body, {
-        childList: true,
-        subtree: true
-      });
+      setupObserver();
       
-      observers.push(observer);
     } catch (e) {
-      console.error(`Error highlighting elements for group: ${group.name}`, e);
+      if (DEBUG_MODE) {
+        console.error(`Error highlighting elements for group: ${group.name}`, e);
+      }
     }
   });
+}
+
+function setupObserver() {
+  const observer = new MutationObserver((mutations) => {
+    // Clear existing timer
+    clearTimeout(debounceTimer);
+    
+    // Set new timer
+    debounceTimer = setTimeout(() => {
+      requestAnimationFrame(() => {
+        highlightElements(currentGroups);
+      });
+    }, 100); // Wait 100ms before updating
+  });
+
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true,
+    attributes: false, // Only observe DOM changes, not attribute changes
+    characterData: false // Don't observe text content changes
+  });
+  
+  observers.push(observer);
 }
 
 function isValidRegex(pattern) {
