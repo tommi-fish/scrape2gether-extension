@@ -53,7 +53,9 @@ function highlightElements(groups) {
   // Clear existing highlights and observers
   highlightedElements.forEach(el => {
     el.style.removeProperty('background-color');
+    el.style.removeProperty('box-shadow');
     el.style.removeProperty('transition');
+    el.style.removeProperty('border-radius');
   });
   highlightedElements.clear();
   observers.forEach(observer => observer.disconnect());
@@ -69,19 +71,59 @@ function highlightElements(groups) {
       debugLog(`Found ${containers.length} containers to highlight for selector: ${group.containerSelector}`);
       
       containers.forEach(container => {
-        container.style.backgroundColor = '#FFEB3B';
-        container.style.transition = 'background-color 0.3s';
+        // Container highlighting with green glow
+        container.style.backgroundColor = 'rgba(255, 255, 255, 0.03)';
+        container.style.backdropFilter = 'blur(2px)';
+        container.style.boxShadow = '0 0 0 1px rgba(0, 255, 157, 0.1), 0 4px 12px rgba(0, 255, 157, 0.1)';
+        container.style.transition = 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+        container.style.borderRadius = '8px';
+        container.style.position = 'relative';
         highlightedElements.add(container);
+
+        // Green border glow animation
+        const glowAnimation = `
+          @keyframes borderGlow {
+            0% { border-color: rgba(0, 255, 157, 0.1); }
+            50% { border-color: rgba(0, 255, 157, 0.2); }
+            100% { border-color: rgba(0, 255, 157, 0.1); }
+          }
+        `;
+        
+        // Add styles to head if they don't exist
+        if (!document.querySelector('#highlight-styles')) {
+          const styleSheet = document.createElement('style');
+          styleSheet.id = 'highlight-styles';
+          styleSheet.textContent = glowAnimation;
+          document.head.appendChild(styleSheet);
+        }
 
         // Highlight child elements
         group.childSelectors.forEach(childSelector => {
           const childElements = container.querySelectorAll(childSelector.selector);
-          debugLog(`Found ${childElements.length} child elements for selector: ${childSelector.selector}`);
           
           childElements.forEach(el => {
-            el.style.backgroundColor = '#90EE90';
-            el.style.transition = 'background-color 0.3s';
+            // Child element highlighting with green theme
+            el.style.backgroundColor = 'rgba(0, 255, 157, 0.05)';
+            el.style.backdropFilter = 'blur(1px)';
+            el.style.boxShadow = '0 0 0 1px rgba(0, 255, 157, 0.1)';
+            el.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+            el.style.borderRadius = '4px';
+            el.style.padding = '2px 4px';
+            el.style.margin = '2px 0';
             highlightedElements.add(el);
+
+            // Enhanced hover effect with green theme
+            el.addEventListener('mouseenter', () => {
+              el.style.backgroundColor = 'rgba(0, 255, 157, 0.1)';
+              el.style.boxShadow = '0 0 0 1px rgba(0, 255, 157, 0.2), 0 2px 8px rgba(0, 255, 157, 0.1)';
+              el.style.transform = 'translateY(-1px)';
+            });
+            
+            el.addEventListener('mouseleave', () => {
+              el.style.backgroundColor = 'rgba(0, 255, 157, 0.05)';
+              el.style.boxShadow = '0 0 0 1px rgba(0, 255, 157, 0.1)';
+              el.style.transform = 'translateY(0)';
+            });
           });
         });
       });
