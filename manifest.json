@@ -1,6 +1,6 @@
 {
     "manifest_version": 3,
-    "name": "Element Value Collector",
+    "name": "scrape2gether",
     "version": "1.0",
     "permissions": [
       "activeTab",
