@@ -141,30 +141,34 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   // View collected data
-  viewDataButton.addEventListener('click', function() {
-    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-      if (!tabs[0]?.id) {
-        alert('Cannot access the current tab. Please try again.');
-        return;
-      }
-      
-      debugLog('Requesting data...');
-      
-      chrome.tabs.sendMessage(tabs[0].id, {
-        action: "getData"
-      }, function(response) {
-        debugLog('View data response:', response);
-        
-        if (chrome.runtime.lastError) {
-          console.error('Error:', chrome.runtime.lastError);
-          return;
-        }
-        
+  viewDataButton.addEventListener('click', async function() {
+    chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
+      chrome.tabs.sendMessage(tabs[0].id, { action: "getData" }, function(response) {
         if (response && response.data) {
           jsonOutput.style.display = 'block';
           jsonOutput.textContent = JSON.stringify(response.data, null, 2);
           inputMode.style.display = 'none';
-
+  
+          // Add Download button
+          const downloadBtn = document.createElement('button');
+          downloadBtn.textContent = 'Download';
+          downloadBtn.style.marginBottom = '10px';
+          downloadBtn.onclick = function() {
+            const data = JSON.stringify(response.data, null, 2);
+            const blob = new Blob([data], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+  
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'data.json'; // Specify the file name
+            link.click();
+  
+            // Cleanup
+            URL.revokeObjectURL(url);
+          };
+          jsonOutput.parentElement.insertBefore(downloadBtn, jsonOutput);
+  
+          // Add Back button
           const backBtn = document.createElement('button');
           backBtn.textContent = 'Back';
           backBtn.style.marginBottom = '10px';
@@ -172,6 +176,7 @@ document.addEventListener('DOMContentLoaded', function() {
             jsonOutput.style.display = 'none';
             inputMode.style.display = 'block';
             this.remove();
+            downloadBtn.remove(); // Remove the Download button when returning
           };
           jsonOutput.parentElement.insertBefore(backBtn, jsonOutput);
         }
