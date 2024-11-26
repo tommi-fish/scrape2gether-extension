@@ -46,17 +46,13 @@ Your scrape2gether extension is now ready to use!
 ---
 
 ## **Planned Features**
-- **Cloud Sync**: Sync selectors and data across devices.
 - **Community Sharing**: Share and use pre-configured selectors created by other scrape2gether users.
-- **Data Analytics**: Integrate tools for summarizing and analyzing scraped data.
 - **Browser Compatibility**: Extend support to Firefox and other Chromium-based browsers.
 - **Advanced Export Options**: Export data to CSV, Excel, or Google Sheets.
-- **Scraping Templates**: Pre-built templates for popular sites to make scraping easier.
 
 ---
 
 ## **Contributing**
-We welcome contributions to enhance scrape2gether. Whether you're reporting bugs, suggesting new features, or contributing code, your input is invaluable!
 
 To contribute:
 1. Fork the repository.
@@ -72,11 +68,6 @@ To contribute:
    ```bash
    git push origin feature-name
    ```
-
----
-
-## **License**
-scrape2gether is released under the MIT License. See the [LICENSE](LICENSE) file for details.
 
 ---
 
